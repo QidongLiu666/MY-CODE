@@ -3,59 +3,15 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import io
 from PIL import Image
-import matplotlib.font_manager as fm
-import sys
-
-# ====================== 终极跨平台中文解决方案 ======================
-plt.rcParams['axes.unicode_minus'] = False
-
-def set_chinese_font():
-    # 1. 优先判断是否在 Streamlit Cloud 环境
-    if 'STREAMLIT_SERVER_HEADLESS' in os.environ:
-        # Streamlit Cloud 环境，使用 WenQuanYi Zen Hei
-        try:
-            font_path = '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc'
-            font_prop = fm.FontProperties(fname=font_path)
-            plt.rcParams['font.family'] = font_prop.get_name()
-            return "Streamlit Cloud: 使用 WenQuanYi Zen Hei"
-        except Exception as e:
-            print(f"Cloud font error: {e}")
-            plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
-            return "Streamlit Cloud: 使用备用字体"
-    else:
-        # 本地环境，优先使用 Windows 字体
-        if sys.platform == "win32":
-            # Windows 本地
-            try:
-                font_path = "C:/Windows/Fonts/msyh.ttc"  # 微软雅黑
-                font_prop = fm.FontProperties(fname=font_path)
-                plt.rcParams['font.family'] = font_prop.get_name()
-                return "Windows: 使用微软雅黑"
-            except:
-                try:
-                    font_path = "C:/Windows/Fonts/simhei.ttf"  # 黑体
-                    font_prop = fm.FontProperties(fname=font_path)
-                    plt.rcParams['font.family'] = font_prop.get_name()
-                    return "Windows: 使用黑体"
-                except Exception as e:
-                    print(f"Windows font error: {e}")
-                    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
-                    return "Windows: 使用备用字体"
-        else:
-            # macOS / Linux 本地
-            try:
-                font_path = '/Library/Fonts/Arial Unicode.ttf'
-                font_prop = fm.FontProperties(fname=font_path)
-                plt.rcParams['font.family'] = font_prop.get_name()
-                return "macOS/Linux: 使用 Arial Unicode"
-            except:
-                plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
-                return "macOS/Linux: 使用备用字体"
-
-# 初始化字体
+from matplotlib import font_manager
 import os
-font_info = set_chinese_font()
-print(f"当前环境: {font_info}")
+
+# ====================== 适配你的仓库结构：加载根目录的 fonts.ttf ======================
+font_path = os.path.join(os.path.dirname(__file__), 'fonts.ttf')  # 直接指向根目录的字体文件
+custom_font = font_manager.FontProperties(fname=font_path)
+
+plt.rcParams['font.family'] = custom_font.get_name()
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # ====================== 核心计算逻辑（完全不变） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
@@ -120,7 +76,7 @@ def 级联分配(初诊列表, 复诊人数):
                     当前余量 = 复诊分配[复诊索引]
     return 复诊分配, 复诊接收
 
-# ====================== 画图函数 ======================
+# ====================== 画图函数（完全不变，和你原始图表一致） ======================
 def 画分配图(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题, ax):
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 12)
@@ -174,7 +130,7 @@ def 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, �
     plt.close(fig)
     return img
 
-# ====================== 网页界面 ======================
+# ====================== 网页界面（完全不变） ======================
 st.set_page_config(page_title="病理标本分配计算器", layout="wide")
 st.title("🧪 病理标本分配系统（网页版）")
 
@@ -224,6 +180,6 @@ if st.button("✅ 生成分配结构图", type="primary"):
         合并图 = 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, 
                            大复诊姓名, 大复诊总量, 大初诊, 大复诊明细, 小标本, 大标本)
         st.image(合并图, use_column_width=True)
-        st.success("✅ 分配结构图已生成！")
+        st.success("✅ 分配结构图已生成！本地/云端中文都正常显示！")
     else:
         st.info("请输入大标本或小标本数量以生成结构图。")
