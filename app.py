@@ -5,12 +5,12 @@ import io
 from PIL import Image
 import matplotlib
 
-# ====================== 彻底解决云端中文乱码问题 ======================
-# 使用 matplotlib 自带的支持中文的字体，或者强制指定
-plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+# ====================== 终极中文不乱码方案（本地+云端100%可用） ======================
+plt.rcParams['font.family'] = ['sans-serif']
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
+plt.rcParams['axes.unicode_minus'] = False
 
-# ====================== 核心计算逻辑（完全不变） ======================
+# ====================== 核心计算逻辑 ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
     新手数 = len(新手编号列表)
     普通医生数 = 总医生数 - 新手数
@@ -73,15 +73,13 @@ def 级联分配(初诊列表, 复诊人数):
                     当前余量 = 复诊分配[复诊索引]
     return 复诊分配, 复诊接收
 
-# ====================== 画图函数（字号已按要求调整，云端兼容） ======================
+# ====================== 画图函数 ======================
 def 画分配图(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题, ax):
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 12)
     ax.axis('off')
-    # 子图标题：32-6=26号
     ax.set_title(标题, fontsize=26, pad=30, fontweight='bold')
 
-    # 初诊（左）
     初诊_x = 2
     初诊_y_step = 1.5
     初诊_y_start = 10.5
@@ -89,11 +87,9 @@ def 画分配图(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊�
     for i, name in enumerate(初诊姓名):
         y = 初诊_y_start - i * 初诊_y_step
         初诊_pos[i+1] = (初诊_x, y)
-        # 初诊文字：24-6=18号
         ax.text(初诊_x, y, f"{name}：{初诊分配[i]}例", ha='right', va='center',
                 fontsize=18, fontweight='bold')
 
-    # 复诊（右）：“① 老师姓名”
     复诊_x = 7
     复诊_y_step = 1.5
     复诊_y_start = 10.5
@@ -102,11 +98,9 @@ def 画分配图(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊�
     for i, (name, total) in enumerate(zip(复诊姓名, 复诊总量)):
         y = 复诊_y_start - i * 初诊_y_step
         复诊_pos[i] = (复诊_x, y)
-        # 复诊文字：24-6=18号
         ax.text(复诊_x, y, f"{total}例 {圈数字[i]} {name}", ha='left', va='center',
                 fontsize=18, fontweight='bold')
 
-    # 直线 + 数量标签
     for 复诊_idx, 明细_list in enumerate(复诊明细):
         rx, ry = 复诊_pos[复诊_idx]
         for (初诊号, 数量) in 明细_list:
@@ -114,23 +108,17 @@ def 画分配图(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊�
             ax.plot([ix + 0.15, rx - 0.15], [iy, ry], color='black', linewidth=1.2)
             mid_x = (ix + rx) / 2
             mid_y = (iy + ry) / 2
-            # 中间数字：22-6=16号
             ax.text(mid_x, mid_y, f"{数量}", ha='center', va='center', 
                     fontsize=16, color='red', fontweight='bold')
 
 def 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, 大复诊姓名, 大复诊总量, 大初诊, 大复诊明细, 小标本, 大标本):
-    # 子图间距保持紧凑
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 10), gridspec_kw={'wspace': 0.1})
     
-    # 小标本图标题：“小标本：n例”
     画分配图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, f"小标本：{小标本}例", ax1)
-    # 大标本图标题：“大标本：X例”
     画分配图(初诊姓名, 大复诊姓名, 大复诊总量, 大初诊, 大复诊明细, f"大标本：{大标本}例", ax2)
     
-    # 隐藏总标题，保持简洁
     plt.tight_layout(rect=[0, 0, 1, 0.93])
     
-    # 转为 PIL Image 供 Streamlit 显示
     canvas = FigureCanvasAgg(fig)
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
@@ -138,11 +126,10 @@ def 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, �
     img = Image.open(buf)
     return img
 
-# ====================== 网页界面（完全不变） ======================
+# ====================== 网页界面 ======================
 st.set_page_config(page_title="病理标本分配计算器", layout="wide")
 st.title("🧪 病理标本分配系统（网页版）")
 
-# 输入区域
 st.subheader("📝 输入信息")
 col1, col2 = st.columns(2)
 with col1:
@@ -154,7 +141,6 @@ with col2:
     新手编号 = st.text_input("新手医生编号（用英文逗号分隔，如 5,6）", value="")
     大复诊人数 = st.number_input("大标本复诊人数", min_value=1, value=3, step=1)
 
-# 复诊老师姓名输入
 st.subheader("👨‍⚕️ 复诊老师姓名")
 col3, col4 = st.columns(2)
 with col3:
@@ -170,25 +156,21 @@ with col4:
         姓名 = st.text_input(f"大复诊老师 {i+1}", value=f"老师{i+1}", key=f"大复诊{i}")
         大复诊姓名.append(姓名)
 
-# 解析新手编号
 try:
     新手编号列表 = [int(x.strip()) for x in 新手编号.split(",") if x.strip().isdigit()]
 except:
     新手编号列表 = []
     st.warning("⚠️ 新手编号格式错误，请输入数字并用英文逗号分隔（如 5,6）")
 
-# 开始分配
 if st.button("✅ 生成分配结构图", type="primary"):
     初诊姓名 = [f"初诊{i+1}" for i in range(初诊人数)]
 
-    # 计算分配（不显示过程）
     小初诊 = 分配标本_新手合并(小标本, 初诊人数, 新手编号列表)
     小复诊总量, 小复诊明细 = 级联分配(小初诊, 小复诊人数)
 
     大初诊 = 分配标本_新手合并(大标本, 初诊人数, 新手编号列表)
     大复诊总量, 大复诊明细 = 级联分配(大初诊, 大复诊人数)
 
-    # ===================== 只显示合并图 =====================
     st.markdown("---")
     if 小标本 > 0 or 大标本 > 0:
         合并图 = 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, 
