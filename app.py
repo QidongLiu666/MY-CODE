@@ -1,6 +1,6 @@
 import streamlit as st
 
-# ====================== 核心计算逻辑（未改动） ======================
+# ====================== 核心计算逻辑（完全未改） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
     新手数 = len(新手编号列表)
     普通医生数 = 总医生数 - 新手数
@@ -60,7 +60,7 @@ def 级联分配(初诊列表, 复诊人数):
                     当前余量 = 复诊分配[复诊_idx]
     return 复诊分配, 复诊接收
 
-# ====================== 画图函数（关键修改：仅保留带圈数字+例数，删除初诊文字） ======================
+# ====================== 画图函数（终极修复：强制中文字体，中文必显） ======================
 def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题):
     圈数字 = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     n_chuzhen = len(初诊姓名)
@@ -72,18 +72,20 @@ def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分�
     right_x = 215  # 线段长度=135，原长3/4
     svg_height = start_y + max(n_chuzhen, n_fuzhen) * line_height + 30
     
+    # 核心修复：指定中文字体，覆盖所有浏览器/部署环境
+    中文字体 = '"Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif'
     html = f"""
     <div style="width:100%; margin:5px auto;">
-        <h3 style="text-align:center; font-size:17px; margin:0; padding:0;">{标题}</h3>
-        <svg width="100%" height="{svg_height}" style="font-family: sans-serif;">
+        <h3 style="text-align:center; font-size:17px; margin:0; padding:0; font-family:{中文字体};">{标题}</h3>
+        <svg width="100%" height="{svg_height}" style="font-family:{中文字体};">
     """
     
-    # 初诊：仅带圈数字 + 例数（如 ① 25例），无任何多余文字
+    # 初诊：仅带圈数字 + 例数（无多余文字）
     for i in range(n_chuzhen):
         y = start_y + i * line_height
         html += f'<text x="{left_x - 15}" y="{y}" text-anchor="end" font-size="14px">{圈数字[i]} {初诊分配[i]}例</text>'
     
-    # 复诊：保留原有样式，标签带“标本”
+    # 复诊：中文姓名+数字，强制中文字体渲染
     for i in range(n_fuzhen):
         y = start_y + i * line_height
         html += f'<text x="{right_x + 10}" y="{y}" font-size="14px">{复诊总量[i]}例 {圈数字[i]} {复诊姓名[i]}</text>'
@@ -104,7 +106,7 @@ def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分�
     """
     st.markdown(html, unsafe_allow_html=True)
 
-# ====================== 网页界面（未改动，标签带“标本”） ======================
+# ====================== 网页界面（标签带“标本”，中文显示） ======================
 st.set_page_config(page_title="病理标本分配", layout="wide")
 st.title("🧪 病理标本分配系统")
 
@@ -132,9 +134,10 @@ try:
     新手编号列表 = [int(x.strip()) for x in 新手编号.split(",") if x.strip().isdigit()]
 except:
     新手编号列表 = []
+    st.warning("⚠️ 新手编号格式错误，请输入数字并用英文逗号分隔（如 5,6）")
 
 if st.button("✅ 生成分配结构图", type="primary"):
-    初诊姓名 = [f"初诊{i+1}" for i in range(初诊医生总数)]  # 仅用于计数，前端不显示
+    初诊姓名 = [f"初诊{i+1}" for i in range(初诊医生总数)]  # 仅用于计数
     
     小初诊 = 分配标本_新手合并(小标本数量, 初诊医生总数, 新手编号列表)
     小复诊总量, 小复诊明细 = 级联分配(小初诊, 小标本复诊人数)
