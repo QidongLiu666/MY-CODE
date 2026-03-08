@@ -4,25 +4,58 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 import io
 from PIL import Image
 import matplotlib.font_manager as fm
+import sys
 
-# ====================== 针对 Windows 本地环境的中文解决方案 ======================
-# 强制使用 Windows 自带的中文字体“微软雅黑”，彻底解决方框问题
+# ====================== 终极跨平台中文解决方案 ======================
 plt.rcParams['axes.unicode_minus'] = False
 
-# 优先使用 Windows 自带的“微软雅黑”
-try:
-    font_path = "C:/Windows/Fonts/msyh.ttc"  # 微软雅黑
-    font_prop = fm.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
-except:
-    # 如果找不到微软雅黑，再用黑体
-    try:
-        font_path = "C:/Windows/Fonts/simhei.ttf"  # 黑体
-        font_prop = fm.FontProperties(fname=font_path)
-        plt.rcParams['font.family'] = font_prop.get_name()
-    except:
-        # 最后兜底
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Zen Hei']
+def set_chinese_font():
+    # 1. 优先判断是否在 Streamlit Cloud 环境
+    if 'STREAMLIT_SERVER_HEADLESS' in os.environ:
+        # Streamlit Cloud 环境，使用 WenQuanYi Zen Hei
+        try:
+            font_path = '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc'
+            font_prop = fm.FontProperties(fname=font_path)
+            plt.rcParams['font.family'] = font_prop.get_name()
+            return "Streamlit Cloud: 使用 WenQuanYi Zen Hei"
+        except Exception as e:
+            print(f"Cloud font error: {e}")
+            plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
+            return "Streamlit Cloud: 使用备用字体"
+    else:
+        # 本地环境，优先使用 Windows 字体
+        if sys.platform == "win32":
+            # Windows 本地
+            try:
+                font_path = "C:/Windows/Fonts/msyh.ttc"  # 微软雅黑
+                font_prop = fm.FontProperties(fname=font_path)
+                plt.rcParams['font.family'] = font_prop.get_name()
+                return "Windows: 使用微软雅黑"
+            except:
+                try:
+                    font_path = "C:/Windows/Fonts/simhei.ttf"  # 黑体
+                    font_prop = fm.FontProperties(fname=font_path)
+                    plt.rcParams['font.family'] = font_prop.get_name()
+                    return "Windows: 使用黑体"
+                except Exception as e:
+                    print(f"Windows font error: {e}")
+                    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
+                    return "Windows: 使用备用字体"
+        else:
+            # macOS / Linux 本地
+            try:
+                font_path = '/Library/Fonts/Arial Unicode.ttf'
+                font_prop = fm.FontProperties(fname=font_path)
+                plt.rcParams['font.family'] = font_prop.get_name()
+                return "macOS/Linux: 使用 Arial Unicode"
+            except:
+                plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
+                return "macOS/Linux: 使用备用字体"
+
+# 初始化字体
+import os
+font_info = set_chinese_font()
+print(f"当前环境: {font_info}")
 
 # ====================== 核心计算逻辑（完全不变） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
