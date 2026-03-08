@@ -3,20 +3,26 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import io
 from PIL import Image
-
-# ====================== 终极绝杀：强制加载中文字体，本地/云端都有字 ======================
-plt.rcParams['axes.unicode_minus'] = False
-
 import matplotlib.font_manager as fm
 
-# 直接加载 WenQuanYi Zen Hei（Streamlit 自带，100% 存在）
+# ====================== 针对 Windows 本地环境的中文解决方案 ======================
+# 强制使用 Windows 自带的中文字体“微软雅黑”，彻底解决方框问题
+plt.rcParams['axes.unicode_minus'] = False
+
+# 优先使用 Windows 自带的“微软雅黑”
 try:
-    font_path = '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc'
+    font_path = "C:/Windows/Fonts/msyh.ttc"  # 微软雅黑
     font_prop = fm.FontProperties(fname=font_path)
     plt.rcParams['font.family'] = font_prop.get_name()
 except:
-    # 备用方案
-    plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'DejaVu Sans']
+    # 如果找不到微软雅黑，再用黑体
+    try:
+        font_path = "C:/Windows/Fonts/simhei.ttf"  # 黑体
+        font_prop = fm.FontProperties(fname=font_path)
+        plt.rcParams['font.family'] = font_prop.get_name()
+    except:
+        # 最后兜底
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Zen Hei']
 
 # ====================== 核心计算逻辑（完全不变） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
