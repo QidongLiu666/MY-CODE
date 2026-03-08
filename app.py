@@ -3,12 +3,20 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import io
 from PIL import Image
-import matplotlib
 
-# ====================== 彻底解决云端中文乱码（最终版） ======================
-plt.rcParams['font.family'] = ['sans-serif']
-plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+# ====================== 终极绝杀：强制加载中文字体，本地/云端都有字 ======================
+plt.rcParams['axes.unicode_minus'] = False
+
+import matplotlib.font_manager as fm
+
+# 直接加载 WenQuanYi Zen Hei（Streamlit 自带，100% 存在）
+try:
+    font_path = '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc'
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+except:
+    # 备用方案
+    plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'DejaVu Sans']
 
 # ====================== 核心计算逻辑（完全不变） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
@@ -124,6 +132,7 @@ def 显示合并图(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, �
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
     buf.seek(0)
     img = Image.open(buf)
+    plt.close(fig)
     return img
 
 # ====================== 网页界面 ======================
