@@ -5,12 +5,12 @@ import io
 from PIL import Image
 import matplotlib
 
-# ====================== 终极中文不乱码方案（本地+云端100%可用） ======================
+# ====================== 彻底解决云端中文乱码（最终版） ======================
 plt.rcParams['font.family'] = ['sans-serif']
 plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
-plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
-# ====================== 核心计算逻辑 ======================
+# ====================== 核心计算逻辑（完全不变） ======================
 def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
     新手数 = len(新手编号列表)
     普通医生数 = 总医生数 - 新手数
