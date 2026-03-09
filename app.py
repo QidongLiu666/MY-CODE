@@ -60,22 +60,22 @@ def 级联分配(初诊列表, 复诊人数):
                     当前余量 = 复诊分配[复诊_idx]
     return 复诊分配, 复诊接收
 
-# ====================== 画图函数（终极修复：强制中文字体，中文必显） ======================
+# ====================== 画图函数（仅按要求修改三处间距，其余完全不变） ======================
 def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题):
     圈数字 = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
     n_chuzhen = len(初诊姓名)
     n_fuzhen = len(复诊姓名)
     
     line_height = 45
-    start_y = 60
+    start_y = 39  # 从60减小到39，缩短标题与图的距离
     left_x = 80
     right_x = 215  # 线段长度=135，原长3/4
-    svg_height = start_y + max(n_chuzhen, n_fuzhen) * line_height + 30
+    svg_height = start_y + max(n_chuzhen, n_fuzhen) * line_height + 24  # 从+30减小到+24，压缩整体高度
     
     # 核心修复：指定中文字体，覆盖所有浏览器/部署环境
     中文字体 = '"Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif'
     html = f"""
-    <div style="width:100%; margin:5px auto;">
+    <div style="width:100%; margin:3px auto;">  <!-- 从5px auto减小到3px auto，缩短两张图之间的距离 -->
         <h3 style="text-align:center; font-size:17px; margin:0; padding:0; font-family:{中文字体};">{标题}</h3>
         <svg width="100%" height="{svg_height}" style="font-family:{中文字体};">
     """
