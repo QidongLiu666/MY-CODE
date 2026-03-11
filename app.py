@@ -1,37 +1,43 @@
 import streamlit as st
 
-# ====================== 核心计算逻辑（完全未改） ======================
-def 分配标本_新手合并(总数, 总医生数, 新手编号列表):
-    新手数 = len(新手编号列表)
-    普通医生数 = 总医生数 - 新手数
-    等效医生数 = 普通医生数 + (新手数 + 1) // 2
 
-    每份 = 总数 // 等效医生数
-    余数 = 总数 % 等效医生数
+# ====================== 核心计算逻辑（完全不动） ======================
+def 分配标本_新手合并(总数, 初诊医生编号列表, 新手编号集合):
+    当量 = 0.0
+    for 号 in 初诊医生编号列表:
+        if 号 in 新手编号集合:
+            当量 += 0.5
+        else:
+            当量 += 1.0
 
-    结果 = [每份 if (i+1 not in 新手编号列表) else 0 for i in range(总医生数)]
-    
-    for i in range(总医生数):
+    每份当量 = 总数 / 当量 if 当量 != 0 else 0
+    结果 = []
+    总分配 = 0
+    for 号 in 初诊医生编号列表:
+        if 号 in 新手编号集合:
+            数量 = int(每份当量 * 0.5)
+        else:
+            数量 = int(每份当量 * 1.0)
+        结果.append(数量)
+        总分配 += 数量
+
+    余数 = 总数 - 总分配
+    # 先给新手医生补余数（优先级更高）
+    for i in range(len(初诊医生编号列表)):
         if 余数 <= 0:
             break
-        if (i+1 not in 新手编号列表):
+        if 初诊医生编号列表[i] in 新手编号集合:
             结果[i] += 1
             余数 -= 1
-
-    新手组 = [新手编号列表[i:i+2] for i in range(0, len(新手编号列表), 2)]
-    for 组 in 新手组:
-        if len(组) == 2:
-            组总量 = 每份
-            if 余数 > 0:
-                组总量 += 1
-                余数 -= 1
-            半1 = 组总量 // 2
-            半2 = 组总量 - 半1
-            结果[组[0]-1] = 半1
-            结果[组[1]-1] = 半2
-        else:
-            结果[组[0]-1] = 每份 // 2
+    # 再给普通医生补余数
+    for i in range(len(初诊医生编号列表)):
+        if 余数 <= 0:
+            break
+        if 初诊医生编号列表[i] not in 新手编号集合:
+            结果[i] += 1
+            余数 -= 1
     return 结果
+
 
 def 分配标本_普通(总数, 人数):
     每份 = 总数 // 人数
@@ -39,19 +45,20 @@ def 分配标本_普通(总数, 人数):
     结果 = [每份 + (1 if i < 余数 else 0) for i in range(人数)]
     return 结果
 
+
 def 级联分配(初诊列表, 复诊人数):
     总标本 = sum(初诊列表)
     复诊分配 = 分配标本_普通(总标本, 复诊人数)
-    
+
     复诊接收 = [[] for _ in range(复诊人数)]
     复诊_idx = 0
     当前余量 = 复诊分配[复诊_idx]
-    
+
     for 医生i, 数量 in enumerate(初诊列表):
         剩余 = 数量
         while 剩余 > 0:
             给 = min(剩余, 当前余量)
-            复诊接收[复诊_idx].append((医生i+1, 给))
+            复诊接收[复诊_idx].append((医生i + 1, 给))
             剩余 -= 给
             当前余量 -= 给
             if 当前余量 == 0:
@@ -60,37 +67,36 @@ def 级联分配(初诊列表, 复诊人数):
                     当前余量 = 复诊分配[复诊_idx]
     return 复诊分配, 复诊接收
 
-# ====================== 画图函数（仅按要求修改三处间距，其余完全不变） ======================
-def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题):
+
+# ====================== 画图函数（完全不动） ======================
+def 画分配图_干净版(初诊医生编号列表, 复诊姓名, 复诊总量, 初诊分配, 复诊明细, 标题):
     圈数字 = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩']
-    n_chuzhen = len(初诊姓名)
+    n_chuzhen = len(初诊医生编号列表)
     n_fuzhen = len(复诊姓名)
-    
+
     line_height = 45
-    start_y = 39  # 从60减小到39，缩短标题与图的距离
+    start_y = 30
     left_x = 80
-    right_x = 215  # 线段长度=135，原长3/4
-    svg_height = start_y + max(n_chuzhen, n_fuzhen) * line_height + 24  # 从+30减小到+24，压缩整体高度
-    
-    # 核心修复：指定中文字体，覆盖所有浏览器/部署环境
+    right_x = 215
+    svg_height = start_y + max(n_chuzhen, n_fuzhen) * line_height + 10
+
     中文字体 = '"Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif'
     html = f"""
-    <div style="width:100%; margin:3px auto;">  <!-- 从5px auto减小到3px auto，缩短两张图之间的距离 -->
+    <div style="width:100%; margin:2px auto;">
         <h3 style="text-align:center; font-size:17px; margin:0; padding:0; font-family:{中文字体};">{标题}</h3>
         <svg width="100%" height="{svg_height}" style="font-family:{中文字体};">
     """
-    
-    # 初诊：仅带圈数字 + 例数（无多余文字）
+
     for i in range(n_chuzhen):
         y = start_y + i * line_height
-        html += f'<text x="{left_x - 15}" y="{y}" text-anchor="end" font-size="14px">{圈数字[i]} {初诊分配[i]}例</text>'
-    
-    # 复诊：中文姓名+数字，强制中文字体渲染
+        号 = 初诊医生编号列表[i]
+        圈 = 圈数字[号 - 1] if 1 <= 号 <= 10 else str(号)
+        html += f'<text x="{left_x - 15}" y="{y}" text-anchor="end" font-size="14px">{圈} {初诊分配[i]}例</text>'
+
     for i in range(n_fuzhen):
         y = start_y + i * line_height
         html += f'<text x="{right_x + 10}" y="{y}" font-size="14px">{复诊总量[i]}例 {圈数字[i]} {复诊姓名[i]}</text>'
-    
-    # 连线（长度固定，手机适配）
+
     for 复诊_idx, 明细_list in enumerate(复诊明细):
         for (初诊号, 数量) in 明细_list:
             y1 = start_y + (初诊号 - 1) * line_height
@@ -99,14 +105,15 @@ def 画分配图_干净版(初诊姓名, 复诊姓名, 复诊总量, 初诊分�
             mid_y = (y1 + y2) / 2
             html += f'<line x1="{left_x}" y1="{y1}" x2="{right_x}" y2="{y2}" stroke="#666" stroke-width="1"/>'
             html += f'<text x="{mid_x}" y="{mid_y - 3}" font-size="13px" font-weight="bold" fill="red" text-anchor="middle">{数量}</text>'
-    
+
     html += """
         </svg>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
 
-# ====================== 网页界面（标签带“标本”，中文显示） ======================
+
+# ====================== 网页界面（核心修复：生成严格重复的编号） ======================
 st.set_page_config(page_title="病理标本分配", layout="wide")
 st.title("🧪 病理标本分配系统")
 
@@ -114,40 +121,67 @@ st.subheader("📝 输入信息")
 col1, col2 = st.columns(2)
 with col1:
     大标本数量 = st.number_input("大标本数量", min_value=0, value=48, step=1)
-    初诊医生总数 = st.number_input("初诊医生总数", min_value=1, value=5, step=1)
+    初诊医生总数 = st.number_input("初诊医生总数", min_value=1, value=7, step=1)
     小标本复诊人数 = st.number_input("小标本复诊人数", min_value=1, value=3, step=1)
 with col2:
     小标本数量 = st.number_input("小标本数量", min_value=0, value=125, step=1)
-    新手编号 = st.text_input("新手医生编号（英文逗号分隔）", value="")
+    新手编号 = st.text_input("新手医生编号（英文逗号分隔，重复代表多个同号新手，如 4,4）", value="4,4")
     大标本复诊人数 = st.number_input("大标本复诊人数", min_value=1, value=3, step=1)
 
 st.subheader("👨‍⚕️ 复诊老师姓名")
 col3, col4 = st.columns(2)
 with col3:
     st.markdown("**小标本复诊老师**")
-    小复诊姓名 = [st.text_input(f"小标本复诊老师 {i+1}", value=f"老师{i+1}", key=f"小{i}") for i in range(小标本复诊人数)]
+    小复诊姓名 = [st.text_input(f"小标本复诊老师 {i + 1}", value=f"老师{i + 1}", key=f"小{i}") for i in
+                  range(小标本复诊人数)]
 with col4:
     st.markdown("**大标本复诊老师**")
-    大复诊姓名 = [st.text_input(f"大标本复诊老师 {i+1}", value=f"老师{i+1}", key=f"大{i}") for i in range(大标本复诊人数)]
+    大复诊姓名 = [st.text_input(f"大标本复诊老师 {i + 1}", value=f"老师{i + 1}", key=f"大{i}") for i in
+                  range(大标本复诊人数)]
 
+# 解析新手编号
 try:
     新手编号列表 = [int(x.strip()) for x in 新手编号.split(",") if x.strip().isdigit()]
 except:
     新手编号列表 = []
-    st.warning("⚠️ 新手编号格式错误，请输入数字并用英文逗号分隔（如 5,6）")
+    st.warning("⚠️ 新手编号格式错误，请输入数字并用英文逗号分隔（如 4,4）")
+
+# 核心修复逻辑：生成初诊编号列表
+# 逻辑：从1开始顺排，遇到新手编号，就连续插入对应次数
+基础初诊编号 = []
+当前号 = 1
+新手计数器 = {}
+for num in 新手编号列表:
+    新手计数器[num] = 新手计数器.get(num, 0) + 1
+
+while len(基础初诊编号) < 初诊医生总数:
+    # 如果当前号是新手，且还有剩余次数，就继续追加同一个号
+    if 新手计数器.get(当前号, 0) > 0:
+        while 新手计数器.get(当前号, 0) > 0 and len(基础初诊编号) < 初诊医生总数:
+            基础初诊编号.append(当前号)
+            新手计数器[当前号] -= 1
+        当前号 += 1
+    else:
+        基础初诊编号.append(当前号)
+        当前号 += 1
+
+# 确保长度准确（防溢出）
+基础初诊编号 = 基础初诊编号[:初诊医生总数]
+
+新手编号集合 = set(新手编号列表)
 
 if st.button("✅ 生成分配结构图", type="primary"):
-    初诊姓名 = [f"初诊{i+1}" for i in range(初诊医生总数)]  # 仅用于计数
-    
-    小初诊 = 分配标本_新手合并(小标本数量, 初诊医生总数, 新手编号列表)
+    # ====================== 小标本分配 ======================
+    小初诊 = 分配标本_新手合并(小标本数量, 基础初诊编号, 新手编号集合)
     小复诊总量, 小复诊明细 = 级联分配(小初诊, 小标本复诊人数)
 
-    大初诊 = 分配标本_新手合并(大标本数量, 初诊医生总数, 新手编号列表)
+    # ====================== 大标本分配（半份逻辑正确） ======================
+    大初诊 = 分配标本_新手合并(大标本数量, 基础初诊编号, 新手编号集合)
     大复诊总量, 大复诊明细 = 级联分配(大初诊, 大标本复诊人数)
 
     st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
-        画分配图_干净版(初诊姓名, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, f"小标本：{小标本数量}例")
+        画分配图_干净版(基础初诊编号, 小复诊姓名, 小复诊总量, 小初诊, 小复诊明细, f"小标本：{小标本数量}例")
     with c2:
-        画分配图_干净版(初诊姓名, 大复诊姓名, 大复诊总量, 大初诊, 大复诊明细, f"大标本：{大标本数量}例")
+        画分配图_干净版(基础初诊编号, 大复诊姓名, 大复诊总量, 大初诊, 大复诊明细, f"大标本：{大标本数量}例")
